@@ -6,10 +6,12 @@ import QuizScreen from './components/QuizScreen';
 import ResultsScreen from './components/ResultsScreen';
 import ParentDashboard from './components/ParentDashboard';
 import ReinforcePractice from './components/ReinforcePractice';
+import EyeBreak from './components/EyeBreak';
 
 export default function App() {
   return (
     <div className="min-h-screen">
+      <EyeBreak />
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/profiles" element={<ProfileSelect />} />

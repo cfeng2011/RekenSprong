@@ -29,6 +29,17 @@ export function getReinforceQuestions(level: Level, topic: string, exclude: stri
 }
 
 /**
+ * Bonusronde for fast finishers: 3 hard questions (difficulty 3), fallback difficulty 2.
+ */
+export function getBonusQuestions(level: Level): Question[] {
+  const pool = ALL_QUESTIONS[level];
+  const hard = [...pool.filter(q => q.difficulty === 3)].sort(() => Math.random() - 0.5);
+  if (hard.length >= 3) return hard.slice(0, 3);
+  const medium = [...pool.filter(q => q.difficulty === 2)].sort(() => Math.random() - 0.5);
+  return [...hard, ...medium].slice(0, 3);
+}
+
+/**
  * Rush test: 2 easy questions (difficulty 1) + 1 challenging (difficulty 3, or 2 as fallback).
  * Shuffled so the hard one can land anywhere.
  */

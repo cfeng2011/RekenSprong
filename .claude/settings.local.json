@@ -4,7 +4,10 @@
       "WebFetch(domain:www.w4kangoeroe.nl)",
       "Bash(npm install:*)",
       "Bash(npm run:*)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

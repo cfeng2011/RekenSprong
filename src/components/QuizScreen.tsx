@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { LEVEL_CONFIG } from '../types';
 import type { Level, Question, SessionAnswer, QuizSession } from '../types';
-import { getQuestionsForSession, getRushQuestions } from '../data';
+import { getQuestionsForSession, getRushQuestions, getBonusQuestions } from '../data';
 import { generateId, formatTime } from '../utils/helpers';
 import clsx from 'clsx';
 
@@ -25,24 +25,28 @@ const OPTION_HOVER = [
 ];
 
 const RUSH_TIME = 3 * 60; // 3 minutes for the full rush test
+const BONUS_TIME = 5 * 60; // 5 minutes for the 3-question bonus round
 
 export default function QuizScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const level: Level = location.state?.level ?? 'wizFUN_g3';
   const isRush: boolean = location.state?.rush === true;
+  const isBonus: boolean = location.state?.bonus === true;
   const cfg = LEVEL_CONFIG[level];
 
   const { activeChildId, addSession } = useAppStore();
 
   const [questions] = useState<Question[]>(() =>
-    isRush ? getRushQuestions(level) : getQuestionsForSession(level, cfg.questions)
+    isRush ? getRushQuestions(level)
+      : isBonus ? getBonusQuestions(level)
+      : getQuestionsForSession(level, cfg.questions)
   );
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [answers, setAnswers] = useState<SessionAnswer[]>([]);
-  const [timeLeft, setTimeLeft] = useState(isRush ? RUSH_TIME : cfg.timeMinutes * 60);
+  const [timeLeft, setTimeLeft] = useState(isRush ? RUSH_TIME : isBonus ? BONUS_TIME : cfg.timeMinutes * 60);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [sessionStartTime] = useState(Date.now());
   const [animKey, setAnimKey] = useState(0);
@@ -56,7 +60,7 @@ export default function QuizScreen() {
   const currentQ = questions[currentIdx];
   const isLast = currentIdx === questions.length - 1;
   const progressPct = (currentIdx / questions.length) * 100;
-  const totalTime = isRush ? RUSH_TIME : cfg.timeMinutes * 60;
+  const totalTime = isRush ? RUSH_TIME : isBonus ? BONUS_TIME : cfg.timeMinutes * 60;
   const timerPct = (timeLeft / totalTime) * 100;
 
   // Rush 3-2-1 countdown before quiz starts
@@ -103,7 +107,7 @@ export default function QuizScreen() {
       totalQuestions: questions.length,
     };
     addSession(session);
-    navigate('/results', { state: { session, rush: isRush } });
+    navigate('/results', { state: { session, rush: isRush, bonus: isBonus } });
   }
 
   function handleSelect(optionIdx: number) {
@@ -227,6 +231,29 @@ export default function QuizScreen() {
       className="min-h-screen flex flex-col px-4 py-4"
       style={rushBg ? { background: rushBg } : undefined}
     >
+      {/* Bonus round header strip */}
+      {isBonus && (
+        <motion.div
+          className="max-w-2xl mx-auto w-full mb-2 flex items-center justify-center gap-2"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.span
+            className="text-2xl"
+            animate={{ y: [-4, 4, -4] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+          >🚀</motion.span>
+          <span className="text-white font-black text-xl tracking-widest uppercase">
+            Bonusronde — extra moeilijk!
+          </span>
+          <motion.span
+            className="text-2xl"
+            animate={{ y: [4, -4, 4] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+          >🚀</motion.span>
+        </motion.div>
+      )}
+
       {/* Rush mode electric header strip */}
       {isRush && (
         <motion.div

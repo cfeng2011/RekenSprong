@@ -18,6 +18,7 @@ export default function ResultsScreen() {
   const location = useLocation();
   const session: QuizSession = location.state?.session;
   const isRush: boolean = location.state?.rush === true;
+  const isBonus: boolean = location.state?.bonus === true;
   const { profiles, activeChildId, computeProgress } = useAppStore();
   const activeProfile = profiles.find((p) => p.id === activeChildId);
   const progress = activeChildId ? computeProgress(activeChildId) : null;
@@ -44,6 +45,10 @@ export default function ResultsScreen() {
     .filter(([, v]) => v.total > 0 && v.correct / v.total < 0.6)
     .map(([topic]) => topic as keyof typeof TOPIC_LABELS);
 
+  // Fast finisher with a high score? Offer the bonus round (not after rush/bonus itself)
+  const avgSecondsPerQuestion = totalTime / session.totalQuestions;
+  const earnedBonus = !isRush && !isBonus && pct >= 80 && avgSecondsPerQuestion < 25;
+
   return (
     <div className="min-h-screen px-4 py-8 overflow-y-auto">
       <div className="max-w-lg mx-auto">
@@ -53,6 +58,25 @@ export default function ResultsScreen() {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
         >
+          {isBonus && (
+            <motion.div
+              className="inline-flex items-center gap-2 bg-purple-400 text-white font-black px-5 py-2 rounded-full mb-3 text-lg shadow-lg"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, delay: 0.1 }}
+            >
+              <motion.span
+                animate={{ y: [-4, 4, -4] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >🚀</motion.span>
+              Bonusronde klaar!
+              <motion.span
+                animate={{ y: [4, -4, 4] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >🚀</motion.span>
+            </motion.div>
+          )}
+
           {isRush && (
             <motion.div
               className="inline-flex items-center gap-2 bg-yellow-400 text-yellow-900 font-black px-5 py-2 rounded-full mb-3 text-lg shadow-lg"
@@ -89,6 +113,8 @@ export default function ResultsScreen() {
           <p className="text-white/80 text-lg">
             {isRush
               ? (pct === 100 ? '⚡ Perfecte rush! Je bent een bliksem rekenwonder!' : pct >= 66 ? '⚡ Super snel en goed!' : '⚡ Goed geprobeerd! Probeer nog een rush!')
+              : isBonus
+              ? (pct === 100 ? '🚀 Alle bonusvragen goed! Jij bent een echte kampioen!' : pct >= 66 ? '🚀 Knap gedaan op de moeilijkste vragen!' : '🚀 Bonusvragen zijn pittig — goed geprobeerd!')
               : starMessages[stars]}
           </p>
         </motion.div>
@@ -177,6 +203,29 @@ export default function ResultsScreen() {
             })}
           </div>
         </motion.div>
+
+        {/* Bonus round offer for fast finishers */}
+        {earnedBonus && (
+          <motion.div
+            className="bg-purple-50 border-2 border-purple-300 rounded-3xl p-5 mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <h3 className="font-black text-purple-700 text-lg mb-2">
+              🚀 Wauw, jij bent snel én goed!
+            </h3>
+            <p className="text-purple-600 text-sm mb-3">
+              Jij hebt de Bonusronde verdiend: 3 extra moeilijke vragen voor echte rekentoppers. Durf jij het aan?
+            </p>
+            <button
+              onClick={() => navigate('/quiz', { state: { level: session.level, bonus: true } })}
+              className="w-full py-3 rounded-2xl bg-purple-500 hover:bg-purple-400 text-white font-black transition-all btn-bounce"
+            >
+              🚀 Start de Bonusronde!
+            </button>
+          </motion.div>
+        )}
 
         {/* Weak topics - reinforce */}
         {weakTopics.length > 0 && (
